@@ -11,6 +11,7 @@ on:
         options:
           - plan
           - apply
+          - destroy
 
 permissions:
   contents: read
@@ -77,6 +78,7 @@ jobs:
         run: terraform validate
 
       - name: Create Terraform plan
+        if: ${{ inputs.terraform_action != 'destroy' }}
         working-directory: terraform
         run: terraform plan -out=tfplan
 
@@ -84,6 +86,11 @@ jobs:
         if: ${{ inputs.terraform_action == 'apply' }}
         working-directory: terraform
         run: terraform apply -auto-approve tfplan
+        
+      - name: Destroy Terraform infrastructure
+        if: ${{ inputs.terraform_action == 'destroy' }}
+        working-directory: terraform
+        run: terraform destroy -auto-approve
 
       - name: Display Terraform outputs
         if: ${{ inputs.terraform_action == 'apply' }}
