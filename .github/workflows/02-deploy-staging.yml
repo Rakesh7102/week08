@@ -143,6 +143,28 @@ jobs:
           kubectl rollout status deployment/enrollment-service \
             -n staging \
             --timeout=300s
+      
+      - name: Add Prometheus Helm repository
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+      - name: Deploy Prometheus and Grafana
+        run: |
+          helm upgrade --install monitoring \
+            prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --create-namespace \
+            --set grafana.service.type=ClusterIP \
+            --set alertmanager.enabled=false \
+            --set prometheus.prometheusSpec.retention=2h \
+            --wait \
+            --timeout 10m
+
+      - name: Verify monitoring components
+        run: |
+          kubectl get pods -n monitoring
+          kubectl get services -n monitoring
 
       - name: Show staging resources
         run: |
