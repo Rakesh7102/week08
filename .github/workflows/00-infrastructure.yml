@@ -29,7 +29,7 @@ jobs:
       TF_VAR_storage_account_name: sit722w8storage41698
       TF_VAR_aks_cluster_name: sit722-8-1p-aks-41698
       TF_VAR_aks_dns_prefix: sit722w8-41698
-      TF_VAR_aks_node_count: 1
+      TF_VAR_aks_node_count: 2
       TF_VAR_kubernetes_version: "1.36"
       TF_VAR_environment: staging
 
