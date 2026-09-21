@@ -4,6 +4,7 @@ metadata:
   name: enrollment-db-pvc
   namespace: staging
 spec:
+  storageClassName: azurefile-csi
   accessModes:
     - ReadWriteOnce
   resources:
@@ -51,8 +52,7 @@ spec:
               mountPath: /var/lib/postgresql/data
       volumes:
         - name: enrollment-db-storage
-          persistentVolumeClaim:
-            claimName: enrollment-db-pvc
+          emptyDir: {}
 
 ---
 apiVersion: v1
