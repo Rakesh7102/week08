@@ -1,0 +1,91 @@
+name: 00 - Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      terraform_action:
+        description: Terraform operation to perform
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform ${{ inputs.terraform_action }}
+    runs-on: ubuntu-latest
+
+    env:
+      TF_IN_AUTOMATION: true
+      TF_INPUT: false
+
+      TF_VAR_resource_group_name: sit722-8-1p-rg-41698
+      TF_VAR_acr_name: sit722w8acr41698
+      TF_VAR_storage_account_name: sit722w8storage41698
+      TF_VAR_aks_cluster_name: sit722-8-1p-aks-41698
+      TF_VAR_aks_dns_prefix: sit722w8-41698
+      TF_VAR_aks_node_count: 1
+      TF_VAR_kubernetes_version: "1.36"
+      TF_VAR_environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.8"
+
+      - name: Get Terraform state storage key
+        shell: bash
+        run: |
+          STATE_KEY=$(az storage account keys list \
+            --resource-group sit722-10-2d-state-rg-41698 \
+            --account-name sit722w10tfstate41698 \
+            --query "[0].value" \
+            --output tsv)
+
+          echo "::add-mask::$STATE_KEY"
+          echo "ARM_ACCESS_KEY=$STATE_KEY" >> "$GITHUB_ENV"
+
+      - name: Terraform initialise
+        working-directory: terraform
+        run: |
+          terraform init \
+            -reconfigure \
+            -backend-config="storage_account_name=sit722w10tfstate41698" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=week08.terraform.tfstate"
+
+      - name: Check Terraform formatting
+        working-directory: terraform
+        run: terraform fmt -check
+
+      - name: Validate Terraform configuration
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Create Terraform plan
+        working-directory: terraform
+        run: terraform plan -out=tfplan
+
+      - name: Apply Terraform plan
+        if: ${{ inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Display Terraform outputs
+        if: ${{ inputs.terraform_action == 'apply' }}
+        working-directory: terraform
+        run: terraform output

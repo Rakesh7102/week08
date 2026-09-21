@@ -68,7 +68,9 @@ variable "environment" {
 }
 
 variable "kubernetes_version" {
-  default = "1.36.1"
+  default     = "1.36"
+  description = "Kubernetes version used by the AKS cluster"
+  type        = string
 }
 
 variable "tags" {
