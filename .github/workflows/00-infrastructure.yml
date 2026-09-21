@@ -6,11 +6,11 @@ on:
       terraform_action:
         description: Terraform operation to perform
         required: true
-        default: apply
+        default: plan
         type: choice
         options:
-          - apply
           - plan
+          - apply
 
 permissions:
   contents: read
